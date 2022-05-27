@@ -1,0 +1,21 @@
+#!/bin/bash
+
+while IFS= read -r c
+do
+	echo "Queuing...${c}"
+	mongodump \
+	--config=/home/ubuntu/aws-prod-cs \
+	--username=root \
+	-d fhir_prod \
+	-c $c \
+	--gzip --archive \
+	| mongorestore \
+	--config=/home/ubuntu/atlas-prod-cs \
+	--username=root \
+	--drop \
+	--stopOnError \
+	--numInsertionWorkersPerCollection=10 \
+	--nsFrom="fhir_prod.*" \
+	--nsTo="fhir.*" \
+	--gzip --archive 2> /tmp/mongosync-prod-$c-$lookbackDate.error.log
+done < "/home/ubuntu/collections.txt"
